@@ -19,12 +19,12 @@ class Evaluator:
             torchvision.datasets.CIFAR10(root=configs.data_root, train=False, download=True, transform=transform_test)
             ,batch_size=configs.batch_size, shuffle=False, num_workers=8
         )
-        if self.configs.spbn:
-            self.model = models.convert_splitbn_model(self.model, momentum=0.5)
-        else:
-            self.model.to(self.device)
-        
-        self._load_network(os.path.join(self.save_path, self.configs.phase, "best.pth"))
+        # if self.configs.spbn:
+        #     self.model = models.convert_splitbn_model(self.model, momentum=0.5)
+        # else:
+        #     self.model.to(self.device)
+        #
+        self._load_network('results/ResNet/ResNet_clean.pth')
         self.model = Normalize_net(self.model)
 
         attack_config = {

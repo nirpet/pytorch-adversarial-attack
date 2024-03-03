@@ -1,7 +1,7 @@
 {
     "mode": "eval",
     "data_root": "./data",
-    "model_name" : "WideResNet",
+    "model_name" : "ResNet",
     "model_depth": 34,
     "model_width": 10,
     "num_class":10,
