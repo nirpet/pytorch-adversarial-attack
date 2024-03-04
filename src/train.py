@@ -6,7 +6,7 @@ import torchvision
 import utils
 import os
 import time
-from torch.utils.tensorboard import SummaryWriter 
+# from torch.utils.tensorboard import SummaryWriter
 from attack import *
 from tqdm import tqdm
 
@@ -129,7 +129,7 @@ class Trainer:
     def train_model(self):
         log_dir = self.save_path + '/training_log'
         os.makedirs(log_dir, exist_ok=True)
-        self.writer = SummaryWriter(log_dir)
+        # self.writer = SummaryWriter(log_dir)
         best_acc = self.best_acc
         start_epoch = self.epoch
         for epoch in range(start_epoch, self.configs.epochs):

@@ -5,6 +5,7 @@ import os
 from tqdm import tqdm
 from attack import *
 from utils import Normalize_net
+from inference import predict
 
 class Evaluator:
     def __init__(self, configs, model):
@@ -19,12 +20,12 @@ class Evaluator:
             torchvision.datasets.CIFAR10(root=configs.data_root, train=False, download=True, transform=transform_test)
             ,batch_size=configs.batch_size, shuffle=False, num_workers=8
         )
-        # if self.configs.spbn:
-        #     self.model = models.convert_splitbn_model(self.model, momentum=0.5)
-        # else:
-        #     self.model.to(self.device)
-        #
-        self._load_network('results/ResNet/ResNet_clean.pth')
+        if self.configs.spbn:
+            self.model = models.convert_splitbn_model(self.model, momentum=0.5)
+        else:
+            self.model.to(self.device)
+
+        self._load_network('results/WideResNet/WideResNet_clean.pth')
         self.model = Normalize_net(self.model)
 
         attack_config = {
@@ -46,7 +47,7 @@ class Evaluator:
 
     def _load_network(self, checkpoint_path):
         print("Loading model from {} ...".format(checkpoint_path))
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
         self.model.load_state_dict(checkpoint['model'])
         print("Loading Done..")
 
@@ -60,15 +61,21 @@ class Evaluator:
     def eval_model(self):
         self.model.eval()
         acc = 0 
-        adv_acc = 0 
+        maj_acc = 0
+        adv_acc = 0
+        maj_adv_acc = 0
         tq = tqdm(enumerate(self.testloader), total=len(self.testloader), leave=True)
         for i, (x,y) in tq:
             x, y = x.to(self.device), y.to(self.device)
-            x_adv = self.attacker(x,y)
             logits = self.model(x)
-            adv_logits = self.model(x_adv)
+            maj_logits = predict(self.model, x)
             acc += self._accuracy(logits, y)
+            maj_acc += self._accuracy(maj_logits, y)
+            x_adv = self.attacker(x,y)
+            adv_logits = self.model(x_adv)
+            maj_adv_logits = predict(self.model, x_adv)
             adv_acc += self._accuracy(adv_logits, y)
-            tq.set_description('Evaluation: clean/adv {:.4f}/{:.4f}'.format(
-                    acc/(i+1), adv_acc/(i+1)))
+            maj_adv_acc += self._accuracy(maj_adv_logits, y)
+            tq.set_description('Evaluation: clean/adv {:.4f}/{:.4f}/{:.4f}/{:.4f}'.format(
+                    acc/(i+1), adv_acc/(i+1), maj_acc/(i+1), maj_adv_acc/(i+1)))
         return acc/(i+1), adv_acc/(i+1)
